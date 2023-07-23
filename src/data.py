@@ -5,17 +5,19 @@ import numpy as np
 
 
 def generate_data(median=500, var=100, var_outlier=10, shape=(100, 2), percent_outliers=0.2) -> np.ndarray:
+    """
+    generate random data with artificial outliers
+    temporary, poor implementation
+    """
     n, d = shape
     n_outlier = int((n * percent_outliers))
     std = var * np.random.rand(n, d) * np.random.choice((1, -1), (n, d))
     data = median + std
 
-    lower_std = var_outlier * np.random.rand(n_outlier, d)
-    lower_outliers = median*10 + var + lower_std
+    out_std = var_outlier * np.random.rand(n_outlier, d)
+    outliers = median*10 + var + out_std
 
-    # upper_std = var_outlier * np.random.rand(n_outlier, d)
-    # upper_outliers = median + var + upper_std
-    data = np.concatenate((data, lower_outliers))
+    data = np.concatenate((data, outliers))
     np.random.shuffle(data)
     return data
 

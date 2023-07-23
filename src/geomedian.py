@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 
 """
     TODO:
-        1. SPEEDM
+        1. SPEED UP
         2. test + shapes
         3. comments
         4. naive solution to compare with the approximation
