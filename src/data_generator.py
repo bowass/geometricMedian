@@ -1,5 +1,3 @@
-import random
-from geomedian import GeometricMedian
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -46,8 +44,6 @@ def plot_data(A: np.ndarray, median: list) -> None:
 def main():
     n, d = 100, 2
     A = generate_data(100, 120, 100, (1000, 2), 0.2)
-    gm = GeometricMedian(A)
-    # median = gm.AccurateMedian(0.3)  # should not work yet
     plot_data(A, [np.zeros(d), np.array([500, 500])])
 
 

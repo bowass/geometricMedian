@@ -2,9 +2,13 @@ import numpy as np
 from numpy import linalg as LA
 from typing import Callable
 
+# oops -- TMP
+EYE = (np.eye(2))
 
+
+# useless??
 def calc_f_i(a: np.ndarray, x: np.ndarray) -> float:
-    return LA.norm(a - x)
+    return LA.norm(a - x.T)
 
 
 def g_t_i(x: np.ndarray, a: np.ndarray, t: float) -> np.ndarray:
@@ -18,17 +22,18 @@ def g_t(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     """
     defined in page 6, section 2.3
     """
-    return np.sqrt(1 + (t * LA.norm(x - A, axis=1)) ** 2)
+    return np.sqrt(1 + (t * LA.norm(x.T - A, axis=1)) ** 2)
 
 
 def calc_f(A: np.ndarray, x: np.ndarray) -> float:
     """
     defined in page 3, equation 1.1
     """
-    # noinspection PyTypeChecker
-    return np.sum(LA.norm(A - x, axis=1))
+    # noinspection PyTypeChecker - why do we need it
+    return np.sum(LA.norm(A - x.T, axis=1))
 
 
+# useless???
 def calc_grad_ft(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     """
     page 13, lemma 13
@@ -38,30 +43,27 @@ def calc_grad_ft(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     for i in range(n):
         result += (t*t * (x - A[i])) / (1 + g_t_i(x, A[i], t))
     return result
-    # print(result)
-    # tp = []
-    # for i in range(n):
-    #     tp.append(1 + g_t_i(x, A[i], t))
-    # return np.sum((t*t*(x - A))/(1 + g_t(x, A, t)).T, axis=1)
 
 
 def calc_hessian(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     """
     page 13, lemma 13
+    CURRENTLY BIGGEST PROBLEM
     TODO: (x-A)(x-A).T shape??? something is weird
+            beware of (d,) vectors!
+            also, vectorize.
     """
     n, d = A.shape
     result = np.zeros((d, d))
+    g = g_t(x, A, t)
+    prod1 = (t*t) / (1 + g)
     for i in range(n):
-        g = g_t_i(x, A[i], t)
-        result += ((t*t) / (1 + g)) * (np.identity(d) - (t*t * (x - A[i]) @ (x - A[i]).T)/(g * (1 + g)))
+        diff = np.reshape(x.T - A[i], (d, 1))
+        result += prod1[i] * (EYE - t*t*diff @ diff.T / (g[i] * (1 + g[i])))
     return result
-    # g = g_t(x, A, t)
-    # prod1 = (t*t) / (1 + g)
-    # prod2 = 1 - (t*t * (x-A)@(x-A).T)/(g*(1 + g))
-    # return prod1 * prod2
 
 
+# useless
 def f_t_i_x(x: np.ndarray, a: np.ndarray, t: float):
     return g_t_i(x, a, t) - np.log(1 + g_t_i(x, a, t))
 
@@ -75,10 +77,12 @@ def f_t_x(x: np.ndarray, A: np.ndarray, t: float):
 
 
 def main1():
-    A =np.random.random((2, 2))
-    x = np.random.random((2, ))
+    # A = np.random.random((2, 2))
+    # x = np.random.random((2, ))
     t = 5.5
-    print(f_t_x(x, A, t))
+    A = np.array([[2, 4, 9], [3, 9, 2]])
+    x = np.array([6, 1, 7])
+    print(calc_hessian(x, A, t))
 
 
 if __name__ == "__main__":
@@ -164,5 +168,5 @@ def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float],
             if gzu <= gx:
                 x = zu
                 gx = gzu
-    print("done with OneDim")
+    print("done with OneDim, x =", x)
     return x

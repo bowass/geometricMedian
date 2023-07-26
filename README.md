@@ -6,7 +6,8 @@ The code is very slow at the moment (despite almost linear time complexity) and 
 1. speed up code
    1. accelerate ```minimize_local_center``` by faster root finding (```scipy``` instead of ```numpy```)
    2. reduce #calls for ```OneDimMinimizer```
-2. vectorize for loops 
-3. visualization (for `d <= 3`)
+   3. minimize norm computation ()
+2. vectorize for loops
+3. visualization (for `d <= 3`)  (with showing all medians along the way)
 4. deterministic algorithm to find median for comparison
 5. UI
