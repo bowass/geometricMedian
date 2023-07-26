@@ -1,13 +1,19 @@
 from geomedian import GeometricMedian
 from data_generator import *
+import torch
+from geom_median.torch import compute_geometric_median
 
 
 def main():
-    n, d = 100, 2
+    n, d = 1000000, 2
     A = generate_data(50, 100, 10, (n, d), 0.15)
     gm = GeometricMedian(A)
-    gm.AccurateMedian(0.01)  # works but SLOW
+    # gm.AccurateMedian(0.01)  # works but SLOW
     # plot_data(A, gm.medians)
+
+    # numerical weighted geometric median
+    cmp_out = compute_geometric_median(torch.from_numpy(A), np.ones(n))
+    plot_data(A, [torch.Tensor.numpy(cmp_out.median)])
 
 
 if __name__ == "__main__":

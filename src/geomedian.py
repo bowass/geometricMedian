@@ -1,21 +1,13 @@
 from utils import *
 
-"""
-    TODO:
-        1. SPEED UP
-        2. test + shapes
-        3. comments
-        4. naive solution to compare with the approximation
-"""
-
 
 def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: float) -> np.ndarray:
     """
     lemma 32, page 35
-    TODO: format
+    TODO: format + speed up
     """
-    # trivial case
     zy = z - y
+    # trivial case
     if LA.norm(zy) ** 2 < alpha:
         return z
     Q = EYE - v @ v.T
@@ -53,6 +45,8 @@ class GeometricMedian:
         self.f_star = None
         self.eps_star = None
         self.medians = None
+        global EYE  # might not work, but also not clean!
+        EYE = np.eye(self.d)
 
     def LocalCenter(self, y: np.ndarray, t: float, eps: float) -> np.ndarray:
         """
@@ -91,9 +85,11 @@ class GeometricMedian:
 
     def AccurateMedian(self, eps: float) -> np.ndarray:
         """
-        algorithm 1, page 8
-        :return: (1+eps)-approximate geometric median with constant probability
-        works in O(nd*log^3(n/eps)) time
+        Input:
+            1. target accuracy epsilon
+        Output: computes (1+eps)-approximate geometric median
+            in O(nd*log^3(n/eps)) time
+        Source: algorithm 1, page 8
         """
         print("At AccurateMedian")
         n, d = self.A.shape
@@ -109,7 +105,7 @@ class GeometricMedian:
         self.medians.append(x)
         x = self.LineSearch(x, t_i(self.f_star, 1), t_i(self.f_star, 1), np.zeros(d), eps_c)
         self.medians.append(x)
-        # max i such that t_i <= t_star
+        # max i such that t_i <= t_star (// 1000 is tmp and is due to high computation time)
         k = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(800)) / np.log(1 + 1 / 600))) // 1000
         print("AccurateMedian k is", k)
         for i in range(1, k + 1):
@@ -117,12 +113,3 @@ class GeometricMedian:
             x = self.LineSearch(x, t_i(self.f_star, i), t_i(self.f_star, i + 1), u, eps_c)
             self.medians.append(x)
         return x
-
-
-"""
-also add functions to plot it nicely like they did
-- speed up hessian && gradient
-- eig ? PowerMethod
-- visualization -- show all medians
-- add k as a parameter
-"""

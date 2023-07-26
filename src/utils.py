@@ -6,37 +6,69 @@ from typing import Callable
 EYE = (np.eye(2))
 
 
-# useless??
 def calc_f_i(a: np.ndarray, x: np.ndarray) -> float:
+    """
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A with shape (n, d)
+    Output: f^{i} (x)
+    TODO:   :: real explanation
+            :: delete if found useless
+    Source: section 2.3, page 6
+    """
     return LA.norm(a - x.T)
 
 
 def g_t_i(x: np.ndarray, a: np.ndarray, t: float) -> np.ndarray:
     """
-    defined in page 6, section 2.3
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A with shape (n, d)
+        3. path parameter t
+    Output: g_{t} (x)
+    TODO:   :: real explanation
+            :: can we remove it and only use g_t_i?
+    Source: section 2.3, page 6
     """
     return np.sqrt(1 + (t * LA.norm(x - a)) ** 2)
 
 
 def g_t(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     """
-    defined in page 6, section 2.3
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A with shape (n, d)
+        3. path parameter t
+    Output: g_{t} (x), vectorized version of g_t_i
+    TODO:   :: real explanation
+    Source: section 2.3, page 6
     """
     return np.sqrt(1 + (t * LA.norm(x.T - A, axis=1)) ** 2)
 
 
 def calc_f(A: np.ndarray, x: np.ndarray) -> float:
     """
-    defined in page 3, equation 1.1
+    Input:
+        1. matrix A with shape (n, d)
+        2. point x with shape (d, 1)
+    Output: f(x): euclidian
+    TODO:   :: find out PyTypeChecker is giving this sus warning?
+    Source: equation 1.1, page 3
     """
-    # noinspection PyTypeChecker - why do we need it
     return np.sum(LA.norm(A - x.T, axis=1))
 
 
-# useless???
 def calc_grad_ft(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     """
-    page 13, lemma 13
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A
+        3. path parameter t
+    Output: the gradient of f_{t} (x)
+    TODO:   :: add comments regarding explanation and true meaning
+            :: speed up if possible (hopefully vectorize this code correctly)
+            :: delete if found useless
+    Source: lemma 13, page 13
     """
     n, d = A.shape
     result = np.zeros(d)
@@ -47,11 +79,14 @@ def calc_grad_ft(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
 
 def calc_hessian(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     """
-    page 13, lemma 13
-    CURRENTLY BIGGEST PROBLEM
-    TODO: (x-A)(x-A).T shape??? something is weird
-            beware of (d,) vectors!
-            also, vectorize.
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A
+        3. path parameter t
+    Output: the hessian of f_{t} (x)
+    TODO:   :: add comments regarding explanation and true meaning
+            :: speed up if possible (hopefully vectorize this code correctly)
+    Source: lemma 13, page 13
     """
     n, d = A.shape
     result = np.zeros((d, d))
@@ -63,14 +98,29 @@ def calc_hessian(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     return result
 
 
-# useless
 def f_t_i_x(x: np.ndarray, a: np.ndarray, t: float):
+    """
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A
+        3. path parameter t
+    Output: f_{t}^{i} (x)
+    TODO:   :: add comments regarding explanation and true meaning
+            :: delete? seems useless
+    Source: section 2.3, page 6
+    """
     return g_t_i(x, a, t) - np.log(1 + g_t_i(x, a, t))
 
 
 def f_t_x(x: np.ndarray, A: np.ndarray, t: float):
     """
-    f_{t}(x), page 6, section 2.3
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A
+        3. path parameter t
+    Output: f_{t} (x)
+    TODO:   :: add comments regarding explanation and true meaning
+    Source: section 2.3, page 6
     """
     g = g_t(x, A, t)
     return np.sum(g - np.log(1 + g))
@@ -91,31 +141,50 @@ if __name__ == "__main__":
 
 def w_t(x: np.ndarray, A: np.ndarray, t: float):
     """
-    defined in page 6, section 2.3
+    Input:
+        1. point x with shape (d, 1)
+        2. matrix A
+        3. path parameter t
+    Output: the weight of x (yes? idk)
+    TODO:   :: add comments regarding explanation and true meaning
+    Source: section 2.3, page 6
     """
     return np.sum(1/(1 + g_t(x, A, t)))
 
 
 def t_i(f: float, i: float) -> float:
     """
-    t_i: defined in algorithm 1, page 8
+    Input:
+        1. f
+        2. i
+    Output: t_i yk
+    TODO:   :: add comments regarding explanation
+    Source: algorithm 1, page 8
     """
     return (1 / (400 * f)) * ((1 + 1 / 600) ** (i - 1))
 
 
 def matrix_norm(x: np.ndarray, A: np.ndarray):
     """
-    :param x: a vector
-    :param A: symmetric positive semi-definite matrix
-    :return: ||x||_A; page 5, section 2.1
+    Input:
+        1. point x with shape (d, 1)
+        2. symmetric positive semi-definite matrix A (all eigenvalues are non-negative)
+        3. target accuracy epsilon
+    Output: norm of x with respect to A
+    TODO:   :: nothing much
+    Source: section 2.1, page 5
     """
     return np.sqrt(x.T @ A @ x)
 
 
-# is there ANY usage to this?
 def PowerMethod(A: np.ndarray, k: int) -> np.ndarray:
     """
-    algorithm 5, page 24
+    Input:
+        1. ...
+    Output: maximal eigenvalue of the hessian and its corresponding eigenvector
+    TODO:   :: this function has no use for now (using faster eigenvector/value computation with numpy
+            :: delete when sure
+    Source: algorithm 5, page 24
     """
     x = np.random.normal(0, 1, size=(A.shape[1], 1))  # x is dX1
     y = LA.matrix_power(A, k) @ x
@@ -124,8 +193,14 @@ def PowerMethod(A: np.ndarray, k: int) -> np.ndarray:
 
 def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float) -> (float, np.ndarray):
     """
-    algorithm 2, page 9
-    TODO: fix code
+    Input:
+        1. point x with shape (d, 1)
+        2. path parameter t (redundant! using np.eig instead of PowerMethod)
+        3. target accuracy epsilon
+    Output: maximal eigenvalue of the hessian and its corresponding eigenvector
+    TODO:   :: optimize - do we need to calc all eigenvalues? any real impact?
+            :: ...
+    Source: algorithm 2, page 9
     """
     # n, d = A.shape
     # At = np.zeros((d, d))
@@ -146,8 +221,12 @@ def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float) -> (float, 
 
 def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float], L: float) -> float:
     """
-    algorithm 8, page 37
-        - improved by 40% !!!
+    Input:
+        1. interval [l, u] and target error epsilon,
+        2. evaluation oracle g : R -> R
+        3. Lipschitz bound L > 0
+    Output: TODO: understand.
+    Source: algorithm 8, page 37
     """
     x = yl = l
     gx = g(x)
