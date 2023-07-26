@@ -46,7 +46,7 @@ def plot_data(A: np.ndarray, median: list, step=1) -> None:
 def main():
     n, d = 100, 2
     A = generate_data(100, 120, 100, (1000, 2), 0.2)
-    plot_data(A, [np.zeros(d), np.array([500, 500]), np.array([4, 200])], step=3)
+    plot_data(A, [np.zeros(d), np.array([500, 500]), np.array([4, 200])], step=2)
 
 
 if __name__ == "__main__":
