@@ -1,6 +1,6 @@
 # Geometric Median
 Implementation of an (1+$`\varepsilon`$)-approximation of a geometric median in nearly linear time, based on [this paper](https://arxiv.org/abs/1606.05225).
-The code is very slow at the moment: this algorithm converges in a very slow pace: $`1 + \frac{\log\left(3n\slash\varepsilon\right)}{\log\left(1 + \frac{1}{600}\right)}`$ iterations of the main algorithm, more than $`4000`$ iterations even for $`\log\frac{n}{\varepsilon}=0`$.
+The code is very slow at the moment: this algorithm converges in a very slow pace: $`1 + \frac{\log\left(\frac{3n}{\varepsilon}\right)}{\log\left(1 + \frac{1}{600}\right)}`$ iterations of the main algorithm, more than $`4000`$ iterations even for $`\log\frac{n}{\varepsilon}=0`$.
 
 ## TODO
 1. speed up code (current image shows a computation of 1/1000 of the needed iterations for 1.01-approximation of 100 samples)
