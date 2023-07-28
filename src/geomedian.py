@@ -18,12 +18,11 @@ def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: fl
     coeff = np.array([alpha, -2 * alpha * t, alpha * t ** 2 - c1, -2 * c1 * t - 2 * c2, c1 * t ** 2 + c2 * t])
     etas = np.roots(coeff)
     lambdas = etas - 1
-    sols = []
     tmpQz = Q @ z
-    for lmbd in lambdas:
-        sols.append(LA.inv(Q + lmbd * EYE) @ (tmpQz + lmbd * y))
+    sols = [LA.inv(Q + lmbd * EYE) @ (tmpQz + lmbd * y) for lmbd in lambdas]
     mini = -1
     best = 0
+    # find min more efficient
     for x, lmbd in zip(sols, lambdas):
         cost = matrix_norm(x - z, Q) ** 2 + lmbd * LA.norm(x - y) ** 2
         if mini == -1 or mini > cost:
@@ -36,25 +35,23 @@ class GeometricMedian:
     """
     find geometric median in O(nd*log^3(n/eps))
     main function is AccurateMedian
-    maybe make constructor with eps parameter
+    maybe make constructor with eps parameter?
     """
 
-    def __init__(self, A: np.ndarray):
+    def __init__(self, A: np.ndarray, n_iter=None):
         self.A = A  # nXd
         self.n, self.d = A.shape
         self.f_star = None
         self.eps_star = None
         self.medians = None
+        self.n_iter = n_iter
         global EYE  # might not work, but also not clean!
         EYE = np.eye(self.d)
 
     def LocalCenter(self, y: np.ndarray, t: float, eps: float) -> np.ndarray:
         """
         algorithm 3, page 10
-        - first line in the paper has x as a parameter for some reason!
-          TODO:
-            - v @ v.T shape: 1X1 or dXd (here should be dXd but on hessian its weird)
-            - v @ v.T shape: 1X1 or dXd (here should be dXd but on hessian its weird)
+        - in the paper: x as a parameter for some reason
         """
         _, v = ApproxMinEig(y, self.A, t, eps)
         v = np.reshape(v, (self.d, 1))
@@ -106,9 +103,10 @@ class GeometricMedian:
         x = self.LineSearch(x, t_i(self.f_star, 1), t_i(self.f_star, 1), np.zeros(d), eps_c)
         self.medians.append(x)
         # max i such that t_i <= t_star (// 1000 is tmp and is due to high computation time)
-        k = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(800)) / np.log(1 + 1 / 600))) // 1000
-        print("AccurateMedian k is", k)
-        for i in range(1, k + 1):
+        if self.n_iter is None:
+            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(800)) / np.log(1 + 1 / 600))) // 1000
+        print("AccurateMedian k is", self.n_iter)
+        for i in range(1, self.n_iter + 1):
             _, u = ApproxMinEig(x, self.A, t_i(self.f_star, i), eps_v)
             x = self.LineSearch(x, t_i(self.f_star, i), t_i(self.f_star, i + 1), u, eps_c)
             self.medians.append(x)
