@@ -10,7 +10,7 @@ def calc_f_i(a: np.ndarray, x: np.ndarray) -> float:
     """
     Input:
         1. point x with shape (d, 1)
-        2. matrix A with shape (n, d)
+        2. data sample with shape (1, d)
     Output: f^{i} (x)
     TODO:   :: DOCUMENT
             :: delete if found useless
@@ -23,7 +23,7 @@ def g_t_i(x: np.ndarray, a: np.ndarray, t: float) -> np.ndarray:
     """
     Input:
         1. point x with shape (d, 1)
-        2. matrix A with shape (n, d)
+        2. data sample with shape (1, d)
         3. path parameter t
     Output: g_{t} (x)
     TODO:   :: DOCUMENT
@@ -234,3 +234,33 @@ def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float],
                 gx = gzu
     print("done with OneDim, x =", x)
     return x
+
+
+def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: float) -> np.ndarray:
+    """
+    lemma 32, page 35
+    TODO: format + speed up
+    """
+    zy = z - y
+    # trivial case
+    if LA.norm(zy) ** 2 < alpha:
+        return z
+    Q = EYE - v @ v.T
+    Qzy = Q @ zy
+    t = LA.norm(v) ** 2
+    c1 = LA.norm(Qzy) ** 2
+    c2 = (v.T @ Qzy) ** 2
+    coeff = np.array([alpha, -2 * alpha * t, alpha * t ** 2 - c1, -2 * c1 * t - 2 * c2, c1 * t ** 2 + c2 * t])
+    etas = np.roots(coeff)
+    lambdas = etas - 1
+    tmpQz = Q @ z
+    sols = [LA.inv(Q + lmbd * EYE) @ (tmpQz + lmbd * y) for lmbd in lambdas]
+    mini = -1
+    best = 0
+    # find min more efficient
+    for x, lmbd in zip(sols, lambdas):
+        cost = matrix_norm(x - z, Q) ** 2 + lmbd * LA.norm(x - y) ** 2
+        if mini == -1 or mini > cost:
+            mini = cost
+            best = x
+    return best

@@ -1,36 +1,6 @@
 from utils import *
 
 
-def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: float) -> np.ndarray:
-    """
-    lemma 32, page 35
-    TODO: format + speed up
-    """
-    zy = z - y
-    # trivial case
-    if LA.norm(zy) ** 2 < alpha:
-        return z
-    Q = EYE - v @ v.T
-    Qzy = Q @ zy
-    t = LA.norm(v) ** 2
-    c1 = LA.norm(Qzy) ** 2
-    c2 = (v.T @ Qzy) ** 2
-    coeff = np.array([alpha, -2 * alpha * t, alpha * t ** 2 - c1, -2 * c1 * t - 2 * c2, c1 * t ** 2 + c2 * t])
-    etas = np.roots(coeff)
-    lambdas = etas - 1
-    tmpQz = Q @ z
-    sols = [LA.inv(Q + lmbd * EYE) @ (tmpQz + lmbd * y) for lmbd in lambdas]
-    mini = -1
-    best = 0
-    # find min more efficient
-    for x, lmbd in zip(sols, lambdas):
-        cost = matrix_norm(x - z, Q) ** 2 + lmbd * LA.norm(x - y) ** 2
-        if mini == -1 or mini > cost:
-            mini = cost
-            best = x
-    return best
-
-
 class GeometricMedian:
     """
     find geometric median in O(nd*log^3(n/eps))
@@ -45,8 +15,6 @@ class GeometricMedian:
         self.eps_star = None
         self.medians = None
         self.n_iter = n_iter
-        global EYE  # might not work, but also not clean!
-        EYE = np.eye(self.d)
 
     def LocalCenter(self, y: np.ndarray, t: float, eps: float) -> np.ndarray:
         """

@@ -5,7 +5,7 @@ from geom_median.torch import compute_geometric_median
 
 
 def main():
-    n, d = 100, 2
+    n, d = 100000, 500
     A = generate_data(50, 100, 10, (n, d), 0.15)
     gm = GeometricMedian(A)
     gm.AccurateMedian(0.3)  # works but SLOW
