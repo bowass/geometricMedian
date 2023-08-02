@@ -15,13 +15,20 @@ class GeometricMedian:
         self.eps_star = None
         self.medians = None
         self.n_iter = n_iter
+        self.products = np.zeros((self.d, self.d, self.n))
+        for i in range(self.d):
+            if i % 50 == 0:
+                print(f"starting {i}'th iteration!")
+            for j in range(i, self.d):
+                self.products[i][j] = A[:, i] * A[:, j]
+        # self.products = [[tmp[i] @ tmp[j] for i in range(self.d)] for j in range(self.d)]
 
     def LocalCenter(self, y: np.ndarray, t: float, eps: float) -> np.ndarray:
         """
         algorithm 3, page 10
         - in the paper: x as a parameter for some reason
         """
-        _, v = ApproxMinEig(y, self.A, t, eps)
+        _, v = ApproxMinEig(y, self.A, t, eps, self.products)
         v = np.reshape(v, (self.d, 1))
         # print(v.shape, y.shape)
         # lmbda, v = ApproxMinEig(y, self.A, t, eps)
@@ -72,10 +79,11 @@ class GeometricMedian:
         self.medians.append(x)
         # max i such that t_i <= t_star (// 1000 is tmp and is due to high computation time)
         if self.n_iter is None:
-            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(800)) / np.log(1 + 1 / 600))) // 1000
+            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(800)) / np.log(1 + 1 / 600))) // 250
         print("AccurateMedian k is", self.n_iter)
         for i in range(1, self.n_iter + 1):
-            _, u = ApproxMinEig(x, self.A, t_i(self.f_star, i), eps_v)
+            _, u = ApproxMinEig(x, self.A, t_i(self.f_star, i), eps_v, self.products)
             x = self.LineSearch(x, t_i(self.f_star, i), t_i(self.f_star, i + 1), u, eps_c)
             self.medians.append(x)
+            # print(f"{len(self.medians)}'th median is {x}")
         return x

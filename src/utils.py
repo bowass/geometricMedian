@@ -73,7 +73,7 @@ def calc_grad_ft(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     n, d = A.shape
     result = np.zeros(d)
     for i in range(n):
-        result += (t*t * (x - A[i])) / (1 + g_t_i(x, A[i], t))
+        result += (t * t * (x - A[i])) / (1 + g_t_i(x, A[i], t))
     return result
 
 
@@ -91,10 +91,10 @@ def calc_hessian(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     n, d = A.shape
     result = np.zeros((d, d))
     g = g_t(x, A, t)
-    prod1 = (t*t) / (1 + g)
+    prod1 = (t * t) / (1 + g)
     for i in range(n):
         diff = np.reshape(x.T - A[i], (d, 1))
-        result += prod1[i] * (EYE - t*t*diff @ diff.T / (g[i] * (1 + g[i])))
+        result += prod1[i] * (EYE - t * t * diff @ diff.T / (g[i] * (1 + g[i])))
     return result
 
 
@@ -136,7 +136,7 @@ def w_t(x: np.ndarray, A: np.ndarray, t: float):
     TODO:   :: DOCUMENT
     Source: section 2.3, page 6
     """
-    return np.sum(1/(1 + g_t(x, A, t)))
+    return np.sum(1 / (1 + g_t(x, A, t)))
 
 
 def t_i(f: float, i: float) -> float:
@@ -177,31 +177,78 @@ def PowerMethod(A: np.ndarray, k: int) -> np.ndarray:
     return np.zeros(A.shape[1]) if LA.norm(y) == 0 else y / LA.norm(y)
 
 
-def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float) -> (float, np.ndarray):
+def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float, products) -> (float, np.ndarray):
     """
     Input:
         1. point x with shape (d, 1)
         2. path parameter t (redundant! using np.eig instead of PowerMethod)
         3. target accuracy epsilon
-    Output: maximal eigenvalue of the hessian and its corresponding eigenvector
+        4. products - matrix with [i,j] = A[:, i] @ A[:, j]
+    Outp`ut: maximal eigenvalue of the hessian and its corresponding eigenvector
     TODO:   :: optimize - do we need to calc all eigenvalues? any real impact?
+            :: we noticed that the eigenvalue is never used -- can we optimize the calculation?
     Source: algorithm 2, page 9
     """
-    # n, d = A.shape
-    # At = np.zeros((d, d))
+    n, d = A.shape
+    At = np.zeros((d, d))
+    g = g_t(x, A, t)
+    z = 1 / (g * ((1 + g) ** 2))
+    zsum = np.sum(z)
+
+    # print(x.shape, A.shape)
+    for i in range(d):
+        for j in range(d):
+            At[i, j] = zsum*x[i]*x[j] - x[j] * z @ A[:, i] - x[i] * z @ A[:, j] + z @ products[min(i, j)][max(i, j)]
+    # full hessian
+    At = (t**2 * np.sum(1/(1+g))) * np.eye(d) - At
+
+    # At = At * (t ** 4) / (g * (1 + g) ** 2)
     # for i in range(n):
-    #     g = g_t_i(x, A[i], t)
-    #     At += (t ** 4 * (x - A[i]) @ (x - A[i]).T) / (((1 + g) ** 2) * g)
+    #     At += (t ** 4 * (x - A[i]) @ (x - A[i]).T) / (((1 + g[i]) ** 2) * g[i])
     #
     # k = int(np.floor(np.log(A.shape[0] / eps)) + 10)
     # u = PowerMethod(At, k)
+    # return 0, u
     # lmbda = u.T @ calc_hessian(x, A, t) @ u
     # return lmbda, u
-    eigenvalues, eigenvectors = LA.eig(calc_hessian(x, A, t))
+    eigenvalues, eigenvectors = LA.eig(At)
     idx = eigenvalues.argsort()[::-1]
     eigenvalues = eigenvalues[idx]
     eigenvectors = eigenvectors[:, idx]
     return eigenvalues[0], eigenvectors[0]
+
+
+def main1():
+    n, d = 3, 2
+    A = np.random.random((n, d))
+    x = np.random.random((d, 1))
+
+    # naive
+    result1 = np.zeros((d, d))
+    for i in range(n):
+        result1 += (x.T - A[i]).T @ (x.T - A[i])
+    print(result1)
+    # ss
+
+    result = np.zeros((d, d))
+    sums = np.sum(A, axis=0)
+    print(x.shape)
+    for i in range(d):
+        for j in range(d):
+            result[i, j] = n*x[i]*x[j] - x[j] * sums[i] - x[i] * sums[j] + A[:, i] @ A[:, j]
+    print(result)
+    # result2 = np.zeros((d, d))
+    # for i in range(n):
+    #     print(x - A[i])
+    #     print((x.T - A[i]) @ (x.T - A[i]).T)
+    # print(x - A)
+    # print((x-A).shape)
+    # print()
+    # print(np.dot((x.T - A.T), (x.T-A.T).T))
+
+
+if __name__ == "__main__":
+    main1()
 
 
 def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float], L: float) -> float:
