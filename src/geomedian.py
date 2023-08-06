@@ -35,9 +35,13 @@ class GeometricMedian:
         # prod = t * t * w_t(y, self.A, t)
         # Q = prod * np.identity(self.d) - (prod - lmbda) * v @ v.T
         xt = y
-        k = int(np.ceil(64 * np.log(1 / eps)))
+        # k = int(np.ceil(64 * np.log(1 / eps)))
+        k = int(np.ceil(0.5*np.log(1/eps)))
         for i in range(k):
-            xt = minimize_local_center(y, xt, v, alpha=1 / (49 * t))
+            # tmp - changing alpha
+            # reduced k by 1/64
+            # increased alpha by 64
+            xt = minimize_local_center(y, xt, v, alpha=(2*64) / (49 * t))
         return xt
 
     def LineSearch(self, y: np.ndarray, t: float, t_tag: float, u: np.ndarray, eps: float) -> np.ndarray:
@@ -79,11 +83,13 @@ class GeometricMedian:
         self.medians.append(x)
         # max i such that t_i <= t_star (// 1000 is tmp and is due to high computation time)
         if self.n_iter is None:
-            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(800)) / np.log(1 + 1 / 600))) // 250
+            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(8)) / np.log(1 + 1 / 600))) # TMP CHANGED 800 TO 8
         print("AccurateMedian k is", self.n_iter)
         for i in range(1, self.n_iter + 1):
             _, u = ApproxMinEig(x, self.A, t_i(self.f_star, i), eps_v, self.products)
             x = self.LineSearch(x, t_i(self.f_star, i), t_i(self.f_star, i + 1), u, eps_c)
             self.medians.append(x)
+            if i % 50 == 0:
+                print(f"iteration {i}/{self.n_iter}")
             # print(f"{len(self.medians)}'th median is {x}")
         return x

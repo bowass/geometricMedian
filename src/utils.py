@@ -2,9 +2,6 @@ import numpy as np
 from numpy import linalg as LA
 from typing import Callable
 
-# oops -- TMP
-EYE = (np.eye(2))
-
 
 def calc_f_i(a: np.ndarray, x: np.ndarray) -> float:
     """
@@ -94,7 +91,7 @@ def calc_hessian(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
     prod1 = (t * t) / (1 + g)
     for i in range(n):
         diff = np.reshape(x.T - A[i], (d, 1))
-        result += prod1[i] * (EYE - t * t * diff @ diff.T / (g[i] * (1 + g[i])))
+        result += prod1[i] * (np.eye(d) - t * t * diff @ diff.T / (g[i] * (1 + g[i])))
     return result
 
 
@@ -148,7 +145,8 @@ def t_i(f: float, i: float) -> float:
     TODO:   :: DOCUMENT
     Source: algorithm 1, page 8
     """
-    return (1 / (400 * f)) * ((1 + 1 / 600) ** (i - 1))
+    # changed 1/400*f to 1/4*f
+    return (1 / (4 * f)) * ((1 + 1 / 600) ** (i - 1))
 
 
 def matrix_norm(x: np.ndarray, A: np.ndarray):
@@ -218,37 +216,8 @@ def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float, products) -
     return eigenvalues[0], eigenvectors[0]
 
 
-def main1():
-    n, d = 3, 2
-    A = np.random.random((n, d))
-    x = np.random.random((d, 1))
-
-    # naive
-    result1 = np.zeros((d, d))
-    for i in range(n):
-        result1 += (x.T - A[i]).T @ (x.T - A[i])
-    print(result1)
-    # ss
-
-    result = np.zeros((d, d))
-    sums = np.sum(A, axis=0)
-    print(x.shape)
-    for i in range(d):
-        for j in range(d):
-            result[i, j] = n*x[i]*x[j] - x[j] * sums[i] - x[i] * sums[j] + A[:, i] @ A[:, j]
-    print(result)
-    # result2 = np.zeros((d, d))
-    # for i in range(n):
-    #     print(x - A[i])
-    #     print((x.T - A[i]) @ (x.T - A[i]).T)
-    # print(x - A)
-    # print((x-A).shape)
-    # print()
-    # print(np.dot((x.T - A.T), (x.T-A.T).T))
-
-
 if __name__ == "__main__":
-    main1()
+    pass
 
 
 def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float], L: float) -> float:
@@ -279,7 +248,7 @@ def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float],
             if gzu <= gx:
                 x = zu
                 gx = gzu
-    print("done with OneDim, x =", x)
+    # print("done with OneDim, x =", x)
     return x
 
 
@@ -292,7 +261,7 @@ def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: fl
     # trivial case
     if LA.norm(zy) ** 2 < alpha:
         return z
-    Q = EYE - v @ v.T
+    Q = np.eye(y.shape[0]) - v @ v.T
     Qzy = Q @ zy
     t = LA.norm(v) ** 2
     c1 = LA.norm(Qzy) ** 2
@@ -301,7 +270,7 @@ def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: fl
     etas = np.roots(coeff)
     lambdas = etas - 1
     tmpQz = Q @ z
-    sols = [LA.inv(Q + lmbd * EYE) @ (tmpQz + lmbd * y) for lmbd in lambdas]
+    sols = [LA.inv(Q + lmbd * np.eye(y.shape[0])) @ (tmpQz + lmbd * y) for lmbd in lambdas]
     mini = -1
     best = 0
     # find min more efficient

@@ -3,8 +3,15 @@ Implementation of a (1+$`\varepsilon`$)-approximation of a geometric median in n
 The code is very slow at the moment: this algorithm converges at a very slow pace: $`1 + \frac{\log\left(\frac{3n}{\varepsilon}\right)}{\log\left(1 + \frac{1}{600}\right)}`$ iterations of the main algorithm, more than $`4000`$ iterations even for $`\log\frac{n}{\varepsilon}=0`$.
 
 ## TODO
-1. speed up code (current image shows a computation of 1/1000 of the needed iterations for 1.01-approximation of 100 samples)
-   1. accelerate ```minimize_local_center``` (takes a large portion of the total running time)
-   2. reduce heavy, repeating computations + vectorize code
-2. improve visualization (for $`d \le 3`$) + UI
-3. compare with [geom-median](https://github.com/krishnap25/geom_median)
+1. Speed Up
+   1. hyperparameter tuning
+2. Visualization
+   1. add more parameters to plotted results
+      1. direction of each search
+      2. its length
+      3. trust region ball
+   2. zoom in (don't have to plot all data)
+   3. compare with OPT
+3. Testing
+   1. Gaussian distribution of the data
+   2. Add noise
