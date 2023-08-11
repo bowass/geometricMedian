@@ -54,7 +54,8 @@ class GeometricMedian:
         u = 6 * self.f_star
 
         def oracle(alpha):
-            return f_t_x(self.LocalCenter(y + alpha * u, t_tag, epsO), self.A, t_tag)
+            # changed alpha to 2*alpha
+            return f_t_x(self.LocalCenter(y + 2*alpha * u, t_tag, epsO), self.A, t_tag)
 
         alpha_tag = OneDimMinimizer(l, u, epsO, oracle, t_tag * self.n)
         return self.LocalCenter(y + alpha_tag * u, t_tag, epsO)
@@ -81,9 +82,9 @@ class GeometricMedian:
         self.medians.append(x)
         x = self.LineSearch(x, t_i(self.f_star, 1), t_i(self.f_star, 1), np.zeros(d), eps_c)
         self.medians.append(x)
-        # max i such that t_i <= t_star (// 1000 is tmp and is due to high computation time)
+        # max i such that t_i <= t_star (modified)
         if self.n_iter is None:
-            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(8)) / np.log(1 + 1 / 600))) # TMP CHANGED 800 TO 8
+            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(8)) / np.log(1 + 1 / 600)))  # TMP CHANGED 800 TO 8
         print("AccurateMedian k is", self.n_iter)
         for i in range(1, self.n_iter + 1):
             _, u = ApproxMinEig(x, self.A, t_i(self.f_star, i), eps_v, self.products)
