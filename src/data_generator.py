@@ -28,7 +28,7 @@ def generate_data(shape=(100, 2), percent_outliers=0.2) -> np.ndarray:
     # data = np.concatenate((data, outliers))
     # np.random.shuffle(data)
     # return data
-    A, _ = make_blobs(n_samples=[int(n*(1 - percent_outliers)), int(n*(0.5*percent_outliers)), int(n*(0.5*percent_outliers))], centers=None, n_features=d, random_state=8)
+    A, _ = make_blobs(n_samples=[int(n*(1 - percent_outliers)), int(n*(0.5*percent_outliers)), int(n*(0.5*percent_outliers))], centers=None, n_features=d, random_state=0, cluster_std=0.4)
     return A
 
 def plot_data(A: np.ndarray, median: np.ndarray, step=1, show_data=False) -> None:
