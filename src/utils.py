@@ -13,8 +13,7 @@ def g_t(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
         1. point x with shape (d, 1)
         2. matrix A with shape (n, d)
         3. path parameter t
-    Output: g_{t} (x), vectorized version of g_t_i
-    TODO:   :: DOCUMENT
+    Output: g_{t} (x)
     Source: section 2.3, page 6
     """
     return np.sqrt(1 + (t * LA.norm(x.T - A, axis=1)) ** 2)
@@ -25,8 +24,7 @@ def calc_f(A: np.ndarray, x: np.ndarray) -> float:
     Input:
         1. matrix A with shape (n, d)
         2. point x with shape (d, 1)
-    Output: f(x): euclidian
-    TODO:   :: find out PyTypeChecker is giving this sus warning?
+    Output: f(x): sum of euclidian distances
     Source: equation 1.1, page 3
     """
     return np.sum(LA.norm(A - x.T, axis=1))
@@ -39,7 +37,6 @@ def f_t_x(x: np.ndarray, A: np.ndarray, t: float):
         2. matrix A
         3. path parameter t
     Output: f_{t} (x)
-    TODO:   :: DOCUMENT
     Source: section 2.3, page 6
     """
     g = g_t(x, A, t)
@@ -52,12 +49,11 @@ def t_i(f: float, i: float) -> float:
         1. f
         2. i
     Output: t_i yk
-    TODO:   :: DOCUMENT
     Source: algorithm 1, page 8
     """
     # changed 1/400*f to 1/4*f
     # return (1 / (400 * f)) * ((1 + 1 / 460) ** (i - 1))
-    return (1 / (0.4 * f)) * ((1 + 1 / 460) ** (i - 1 + 250))
+    return (1 / (0.4 * f)) * ((1 + 1 / 50) ** (i - 1))
 
 
 def matrix_norm(x: np.ndarray, A: np.ndarray):
@@ -67,7 +63,6 @@ def matrix_norm(x: np.ndarray, A: np.ndarray):
         2. symmetric positive semi-definite matrix A (all eigenvalues are non-negative)
         3. target accuracy epsilon
     Output: norm of x with respect to A
-    Source: section 2.1, page 5
     """
     return np.sqrt(x.T @ A @ x)
 
@@ -79,9 +74,7 @@ def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float, products) -
         2. path parameter t (redundant! using np.eig instead of PowerMethod)
         3. target accuracy epsilon
         4. products - matrix with [i,j] = A[:, i] @ A[:, j]
-    Outp`ut: maximal eigenvalue of the hessian and its corresponding eigenvector
-    TODO:   :: optimize - do we need to calc all eigenvalues? any real impact?
-            :: we noticed that the eigenvalue is never used -- can we optimize the calculation?
+    Output: minimal eigenvalue of the hessian and its corresponding eigenvector
     Source: algorithm 2, page 9
     """
     n, d = A.shape
@@ -90,24 +83,22 @@ def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float, products) -
     z = 1 / (g * ((1 + g) ** 2))
     zsum = np.sum(z)
 
-    # print(x.shape, A.shape)
-    # we can vectorize this code?
-
-    # for i in range(d):
-    #     for j in range(d):
-    #         At[i, j] = zsum*x[i]*x[j] - x[j] * z @ A[:, i] - x[i] * z @ A[:, j] + z @ products[min(i, j)][max(i, j)]
+    # calculate hessian
+    for i in range(d):
+        for j in range(d):
+            At[i, j] = zsum*x[i]*x[j] - x[j] * z @ A[:, i] - x[i] * z @ A[:, j] + z @ products[min(i, j)][max(i, j)]
     # full hessian
-    # At = (t**2 * np.sum(1/(1+g))) * np.eye(d) - At
+    At = (t**2 * np.sum(1/(1+g))) * np.eye(d) - At
 
     # print("calculating hessian...")
-    n, d = A.shape
-    result = np.zeros((d, d))
-    g = g_t(x, A, t)
-    prod1 = (t * t) / (1 + g)
-    for i in range(n):
-        diff = np.reshape(x.T - A[i], (d, 1))
-        result += prod1[i] * (np.eye(d) - t * t * diff @ diff.T / (g[i] * (1 + g[i])))
-    At = result
+    # n, d = A.shape
+    # result = np.zeros((d, d))
+    # g = g_t(x, A, t)
+    # prod1 = (t * t) / (1 + g)
+    # for i in range(n):
+    #     diff = np.reshape(x.T - A[i], (d, 1))
+    #     result += prod1[i] * (np.eye(d) - t * t * diff @ diff.T / (g[i] * (1 + g[i])))
+    # At = result
     # print("calculated hessian!")
 
     # At = At * (t ** 4) / (g * (1 + g) ** 2)
@@ -132,17 +123,14 @@ def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float],
         1. interval [l, u] and target error epsilon,
         2. evaluation oracle g : R -> R
         3. Lipschitz bound L > 0
-    Output: TODO: DOCUMENT
+    Output: TODO: ?????????
     Source: algorithm 8, page 37
     """
     x = yl = l
     gx = g(x)
     yu = u
     limit = int(np.ceil(np.emath.logn(3 / 2, L * (u - l) / eps)))
-    print(f"{2*limit + 1} calls to g")
     for i in range(limit):
-        # if i % 10 == 0:
-        #     print(f"i={i}. TEN MORE")
         zl = (2 * yl + yu) / 3
         zu = (yl + 2 * yu) / 3
         gzl = g(zl)
@@ -157,7 +145,6 @@ def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float],
             if gzu <= gx:
                 x = zu
                 gx = gzu
-    print("done with OneDim, x =", x)
     return x
 
 
@@ -173,13 +160,8 @@ def calc_grad_ft(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
             :: delete if found useless
     Source: lemma 13, page 13
     """
-    n, d = A.shape
-    # result = np.zeros(d)
     g = np.expand_dims(g_t(x, A, t), 1)
     return t*t * np.sum((1/(1 + g) * (x.T - A)), axis=0)
-    # for i in range(n):
-    #     result += (t * t * (x - A[i])) / (1 + g[i])
-    # return result
 
 
 def w_t(x: np.ndarray, A: np.ndarray, t: float):
@@ -188,8 +170,7 @@ def w_t(x: np.ndarray, A: np.ndarray, t: float):
         1. point x with shape (d, 1)
         2. matrix A
         3. path parameter t
-    Output: the weight of x (yes? idk)
-    TODO:   :: DOCUMENT
+    Output: the weight of x TODO: ????
     Source: section 2.3, page 6
     """
     return np.sum(1 / (1 + g_t(x, A, t)))
@@ -197,7 +178,7 @@ def w_t(x: np.ndarray, A: np.ndarray, t: float):
 
 def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: float) -> (np.ndarray, int):
     """
-    lemma 32
+    lemma 32, redundent!
     """
     global count_func_calls, count_trivial_sol
     zy = z - y

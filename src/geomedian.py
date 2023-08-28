@@ -16,20 +16,18 @@ class GeometricMedian:
         self.medians = None
         self.n_iter = n_iter
         self.products = np.zeros((self.d, self.d, self.n))
-        self.trivial_calls_minimize_local_center = 0
-        self.total_calls_minimize_local_center = 0
         for i in range(self.d):
             if i % 50 == 0:
                 print(f"processing data... {i}/{self.d}")
             for j in range(i, self.d):
                 self.products[i][j] = A[:, i] * A[:, j]
-        # self.products = [[tmp[i] @ tmp[j] for i in range(self.d)] for j in range(self.d)]
 
     def LocalCenter(self, y: np.ndarray, t: float, eps: float) -> np.ndarray:
         """
         algorithm 3, page 10
         - in the paper: x as a parameter for some reason
         notes: we call minimize_local_center and calculate the same values all over again, for no reason!
+        TODO: document and clean
         """
         # _, v = ApproxMinEig(y, self.A, t, eps, self.products)
         # v = np.reshape(v, (self.d, 1))
@@ -90,6 +88,7 @@ class GeometricMedian:
         """
         algorithm 4, page 10
         - t is unused for some reason!
+        TODO: document
         """
         epsO = (eps * self.eps_star / (160 * self.n ** 2)) ** 2
         l = -6 * self.f_star
@@ -107,7 +106,7 @@ class GeometricMedian:
         Input:
             1. target accuracy epsilon
         Output: computes (1+eps)-approximate geometric median
-            in O(nd*log^3(n/eps)) time - is it less now? also, at least nd^2 preprocessing time
+            in O(nd*log^3(n/eps)) time TODO: format
         Source: algorithm 1, page 8
         """
         print("At AccurateMedian")
@@ -141,4 +140,36 @@ class GeometricMedian:
                 plt.plot(range(len(self.medians)), [calc_f(self.A, med) for med in self.medians], '-o')
                 plt.show()
             # print(f"{len(self.medians)}'th median is {x}")
+        return x
+
+    def AccurateMedianV2(self, eps: float, verbose: float = 0) -> np.ndarray:
+        """
+        faster & more accurate median
+        verbose: prints progress message every %verbose
+        TODO: document and clean
+        """
+        if verbose > 0:
+            print("Starting...")
+        n, d = self.A.shape
+        # mean is 2-approximation
+        x = np.reshape(np.mean(self.A, axis=0), (d, 1))
+        self.f_star = calc_f(self.A, x)
+        self.eps_star = eps / 3
+        self.medians = [x]
+
+        eps_v = ((self.eps_star / 7 * n) ** 2) / 8
+        eps_c = np.power(eps_v / 36, 3 / 2)
+        epsO = (eps_c * self.eps_star / (160 * self.n ** 2)) ** 2
+
+        x = self.LocalCenter(x, t_i(self.f_star, 1), epsO)
+        self.medians.append(x)
+
+        # max i such that t_i <= t_star
+        if self.n_iter is None:
+            self.n_iter = int(np.floor(1 + (np.log(n / self.eps_star) + np.log(800)) / np.log(1 + 1 / 50)) // 2)
+        for i in range(self.n_iter):
+            x = self.LocalCenter(x, t_i(self.f_star, i+1), epsO)
+            self.medians.append(x)
+            if verbose > 0 and i % int(self.n_iter*verbose) == 0:
+                print(f"Completed {i}/{self.n_iter} iterations. Current cost is {calc_f(self.A, x)}")
         return x

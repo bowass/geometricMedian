@@ -13,7 +13,7 @@ def main():
     n, d = 100, 5
     A = generate_data((n, d), 0.2)
     gm = GeometricMedian(A)
-    gm.AccurateMedian(0.01)  # works but SLOW
+    gm.AccurateMedianV2(0.01, verbose=100)  # works but SLOW
     # plot_data(A, np.array(gm.medians), 100, show_data=True)
     print(gm.medians)
     plt.plot(range(len(gm.medians)), [calc_f(A, med) for med in gm.medians], '-o')
