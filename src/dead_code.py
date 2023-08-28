@@ -3,7 +3,9 @@ import numpy.linalg as LA
 from utils import g_t
 
 """
-dead and unused code
+This file contains dead and unused code:
+    - functions and parameters defined in the paper but found no use
+    - naive implementations, vectorized versions in utils.py
 """
 
 

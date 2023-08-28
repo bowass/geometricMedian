@@ -22,6 +22,7 @@ def plot_data(A: np.ndarray, median: np.ndarray, step=1, show_data=False) -> Non
     Output: plots.
     """
     n, d = A.shape
+    median = np.array(median)
     if d == 1:
         if show_data:
             plt.scatter(A[:, 0], label='data')
@@ -37,7 +38,7 @@ def plot_data(A: np.ndarray, median: np.ndarray, step=1, show_data=False) -> Non
         if show_data:
             plt.scatter(A[:, 0], A[:, 1], A[:, 2], label='data')
         for i in range(0, len(median), step):
-            plt.scatter(median[i][0], plotting the mediansmedian[i][1], median[i][2], label=f'median {i}')
+            plt.scatter(median[i][0], median[i][1], median[i][2], label=f'median {i}')
     else:
         raise ValueError("Required d<=3")
     plt.legend((['data'] if show_data else []) + [f'median {i}' for i in range(0, len(median), step)])

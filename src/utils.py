@@ -1,10 +1,6 @@
 import numpy as np
 from numpy import linalg as LA
 from typing import Callable
-import cvxpy as cp
-
-count_trivial_sol = 0
-count_func_calls = 0
 
 
 def g_t(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
@@ -46,8 +42,8 @@ def f_t_x(x: np.ndarray, A: np.ndarray, t: float):
 def t_i(f: float, i: float) -> float:
     """
     Input:
-        1. f
-        2. i
+        1. constant $f
+        2. iteration $i
     Output: t_i yk
     Source: algorithm 1, page 8
     """
@@ -80,36 +76,20 @@ def ApproxMinEig(x: np.ndarray, A: np.ndarray, t: float, eps: float, products) -
     n, d = A.shape
     At = np.zeros((d, d))
     g = g_t(x, A, t)
-    z = 1 / (g * ((1 + g) ** 2))
-    zsum = np.sum(z)
 
-    # calculate hessian
-    for i in range(d):
-        for j in range(d):
-            At[i, j] = zsum*x[i]*x[j] - x[j] * z @ A[:, i] - x[i] * z @ A[:, j] + z @ products[min(i, j)][max(i, j)]
-    # full hessian
-    At = (t**2 * np.sum(1/(1+g))) * np.eye(d) - At
+    if d ** 2 < n:
+        z = 1 / (g * ((1 + g) ** 2))
+        zsum = np.sum(z)
+        for i in range(d):
+            for j in range(d):
+                At[i, j] = n * zsum*x[i]*x[j] - x[j] * z @ A[:, i] - x[i] * z @ A[:, j] + z @ products[min(i, j)][max(i, j)]
+        At = (t**2 * np.sum(1/(1+g))) * np.eye(d) - t**4 * At
+    else:
+        prod = (t * t) / (1 + g)
+        for i in range(n):
+            diff = np.reshape(x.T - A[i], (d, 1))
+            At += prod[i] * (np.eye(d) - t * t * diff @ diff.T / (g[i] * (1 + g[i])))
 
-    # print("calculating hessian...")
-    # n, d = A.shape
-    # result = np.zeros((d, d))
-    # g = g_t(x, A, t)
-    # prod1 = (t * t) / (1 + g)
-    # for i in range(n):
-    #     diff = np.reshape(x.T - A[i], (d, 1))
-    #     result += prod1[i] * (np.eye(d) - t * t * diff @ diff.T / (g[i] * (1 + g[i])))
-    # At = result
-    # print("calculated hessian!")
-
-    # At = At * (t ** 4) / (g * (1 + g) ** 2)
-    # for i in range(n):
-    #     At += (t ** 4 * (x - A[i]) @ (x - A[i]).T) / (((1 + g[i]) ** 2) * g[i])
-
-    # k = int(np.floor(np.log(A.shape[0] / eps)) + 10)
-    # u = PowerMethod(At, k)
-    # return 0, u
-    # lmbda = u.T @ calc_hessian(x, A, t) @ u
-    # return lmbda, u
     eigenvalues, eigenvectors = LA.eig(At)
     idx = eigenvalues.argsort()[::-1]
     eigenvalues = eigenvalues[idx]
@@ -123,7 +103,7 @@ def OneDimMinimizer(l: float, u: float, eps: float, g: Callable[[float], float],
         1. interval [l, u] and target error epsilon,
         2. evaluation oracle g : R -> R
         3. Lipschitz bound L > 0
-    Output: TODO: ?????????
+    Output: argmin on the line achieved by a variation of binary search
     Source: algorithm 8, page 37
     """
     x = yl = l
@@ -155,9 +135,6 @@ def calc_grad_ft(x: np.ndarray, A: np.ndarray, t: float) -> np.ndarray:
         2. matrix A
         3. path parameter t
     Output: the gradient of f_{t} (x)
-    TODO:   :: DOCUMENT
-            :: speed up if possible (hopefully vectorize this code correctly)
-            :: delete if found useless
     Source: lemma 13, page 13
     """
     g = np.expand_dims(g_t(x, A, t), 1)
@@ -170,7 +147,7 @@ def w_t(x: np.ndarray, A: np.ndarray, t: float):
         1. point x with shape (d, 1)
         2. matrix A
         3. path parameter t
-    Output: the weight of x TODO: ????
+    Output: the weight of x
     Source: section 2.3, page 6
     """
     return np.sum(1 / (1 + g_t(x, A, t)))
@@ -178,19 +155,14 @@ def w_t(x: np.ndarray, A: np.ndarray, t: float):
 
 def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: float) -> (np.ndarray, int):
     """
-    lemma 32, redundent!
+    implementation of lemma 32, redundant.
+    returns in second parameter 1 <=> trivial solution
     """
-    global count_func_calls, count_trivial_sol
     zy = z - y
-    count_func_calls += 1
     sols = []
-    oops = 0
-    # trivial case
-    print(f"z = {z}, y = {y}, alpha = {alpha}")
+    # trivial solution
     if LA.norm(zy) ** 2 < alpha:
-        count_trivial_sol += 1
         sols.append(z)
-        oops = 1
         return z, 1
 
     Q = np.eye(y.shape[0]) - v @ v.T
@@ -205,14 +177,10 @@ def minimize_local_center(y: np.ndarray, z: np.ndarray, v: np.ndarray, alpha: fl
     sols = np.concatenate(sols, [LA.inv(Q + lmbd * np.eye(y.shape[0])) @ (tmpQz + lmbd * y) for lmbd in lambdas])
     mini = -1
     best = 0
-    # find min more efficient
+
     for x, lmbd in zip(sols, lambdas):
         cost = matrix_norm(x - z, Q) ** 2 + lmbd * LA.norm(x - y) ** 2
         if mini == -1 or mini > cost:
             mini = cost
             best = x
-    return best, oops
-
-
-if __name__ == "__main__":
-    pass
+    return best, 0
